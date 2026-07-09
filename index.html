@@ -1,0 +1,1465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="GDN Ops Console Prototype v4 - Internal dashboard prototype for Paxos Global Dollar Network (GDN) case study interview.">
+    <title>GDN Ops Console • Prototype v4 | Paxos Interview</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600&amp;display=swap');
+        
+        :root {
+            --primary: #0F172A;
+        }
+        
+        body {
+            font-family: 'Inter', system_ui, -apple-system, BlinkMacSystemFont, sans-serif;
+            font-size: 15px;
+            line-height: 1.5;
+        }
+        
+        .font-display {
+            font-family: 'Space Grotesk', 'Inter', system_ui, sans-serif;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+        }
+
+        h1, h2, .page-title {
+            font-size: 22px;
+            font-weight: 600;
+            letter-spacing: -0.025em;
+        }
+
+        .tab-active {
+            background-color: #0F172A;
+            color: white;
+            border-radius: 6px;
+        }
+
+        .metric-card {
+            transition: transform 0.1s ease, box-shadow 0.1s ease;
+        }
+        
+        .metric-card:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.05), 0 4px 6px -4px rgb(0 0 0 / 0.05);
+        }
+
+        .section-header {
+            font-size: 12px;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+        }
+
+        .kpi-value {
+            font-variant-numeric: tabular-nums;
+            font-feature-settings: "tnum";
+        }
+
+        .data-table {
+            font-size: 14px;
+        }
+        
+        .data-table th {
+            font-weight: 600;
+            color: #475569;
+            background: #f8fafc;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .nav-item {
+            transition: all 0.1s ease;
+        }
+        
+        .nav-item:hover:not(.tab-active) {
+            background-color: #f1f5f9;
+        }
+
+        .pill {
+            font-size: 11px;
+            padding: 1px 8px;
+            border-radius: 9999px;
+            font-weight: 600;
+        }
+
+        .tooltip {
+            position: absolute;
+            z-index: 50;
+            max-width: 320px;
+            padding: 12px 14px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            font-size: 12.5px;
+            line-height: 1.4;
+        }
+
+        .gauge-container {
+            position: relative;
+            width: 120px;
+            height: 120px;
+        }
+
+        .thin-border {
+            border-color: #e2e8f0;
+        }
+
+        .dashboard-bg {
+            background-color: #f8fafc;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: #64748b;
+            letter-spacing: -.3px;
+        }
+
+        .value {
+            font-variant-numeric: tabular-nums;
+            font-feature-settings: "tnum";
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+    <!-- Professional Shareable Header -->
+    <div class="bg-white border-b border-slate-200 px-4 md:px-6 py-3 flex items-center justify-between flex-shrink-0">
+        <div class="flex items-center gap-x-3 md:gap-x-4">
+            <!-- Mobile Hamburger -->
+            <button onclick="toggleSidebar()" class="md:hidden text-slate-600 hover:text-slate-900 p-2 -ml-2">
+                <i class="fa-solid fa-bars text-xl"></i>
+            </button>
+            
+            <div>
+                <span class="font-semibold text-xl tracking-tight">GDN Ops Console</span>
+                <span class="ml-2 text-sm px-2.5 py-0.5 bg-slate-900 text-white rounded-full font-medium hidden sm:inline">Prototype v4</span>
+            </div>
+            <div class="text-sm text-slate-500 hidden md:block">• Prepared for Paxos Interview</div>
+        </div>
+        
+        <div class="flex items-center gap-x-2 text-xs">
+            <div class="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full font-medium hidden sm:block">Internal Prototype</div>
+            <div class="text-slate-400 hidden md:block">July 2026</div>
+        </div>
+    </div>
+
+    <div class="flex h-[calc(100vh-57px)] overflow-hidden">
+        <!-- SIDEBAR -->
+        <div id="sidebar" class="hidden md:block w-64 bg-white border-r border-slate-200 flex flex-col fixed md:relative z-50 h-full md:h-auto shadow-lg md:shadow-none">
+            <!-- Logo -->
+            <div class="px-6 pt-6 pb-4 border-b border-slate-100">
+                <div class="flex items-center gap-x-3">
+                    <div class="w-9 h-9 bg-slate-900 rounded-xl flex items-center justify-center">
+                        <span class="text-white font-bold text-xl tracking-tighter">G</span>
+                    </div>
+                    <div>
+                        <div class="font-display text-2xl font-semibold tracking-tighter">GDN</div>
+                        <div class="text-[10px] text-slate-500 -mt-1">Ops Console</div>
+                    </div>
+                </div>
+                <div class="mt-1 text-[10px] text-slate-400">v4 • Internal</div>
+            </div>
+
+            <!-- Mobile Close Button -->
+            <div class="md:hidden px-4 pb-2">
+                <button onclick="toggleSidebar()" class="text-slate-500 hover:text-slate-700 flex items-center gap-x-2 text-sm">
+                    <i class="fa-solid fa-times"></i>
+                    <span>Close Menu</span>
+                </button>
+            </div>
+
+            <!-- Navigation - Grouped -->
+            <div class="px-3 py-4 flex-1 overflow-y-auto text-sm">
+                
+                <!-- Performance Section -->
+                <div class="px-4 pt-2 pb-1">
+                    <div class="text-[10px] font-semibold tracking-[0.5px] text-slate-400 uppercase mb-1.5">Performance</div>
+                </div>
+                
+                <div onclick="switchTab('overview')" class="nav-item tab-active flex items-center gap-x-3 px-4 py-2 text-sm font-medium cursor-pointer mb-0.5" id="nav-overview">
+                    <i class="fa-solid fa-chart-line w-4"></i>
+                    <span>Overview</span>
+                </div>
+                <div onclick="switchTab('liquidity')" class="nav-item flex items-center gap-x-3 px-4 py-2 text-sm font-medium text-slate-700 cursor-pointer hover:bg-slate-100 rounded-lg mb-0.5" id="nav-liquidity">
+                    <i class="fa-solid fa-water w-4"></i>
+                    <span>Liquidity</span>
+                </div>
+                <div onclick="switchTab('defi')" class="nav-item flex items-center gap-x-3 px-4 py-2 text-sm font-medium text-slate-700 cursor-pointer hover:bg-slate-100 rounded-lg mb-0.5" id="nav-defi">
+                    <i class="fa-solid fa-coins w-4"></i>
+                    <span>DeFi</span>
+                </div>
+                <div onclick="switchTab('marketing')" class="nav-item flex items-center gap-x-3 px-4 py-2 text-sm font-medium text-slate-700 cursor-pointer hover:bg-slate-100 rounded-lg mb-3" id="nav-marketing">
+                    <i class="fa-solid fa-bullhorn w-4"></i>
+                    <span>Marketing</span>
+                </div>
+
+                <!-- Admin / Automation Section -->
+                <div class="px-4 pt-3 pb-1 border-t border-slate-100">
+                    <div class="text-[10px] font-semibold tracking-[0.5px] text-slate-400 uppercase mb-1.5">Admin / Automation</div>
+                </div>
+                
+                <div onclick="switchTab('experiments')" class="nav-item flex items-center gap-x-3 px-4 py-2 text-sm font-medium text-slate-700 cursor-pointer hover:bg-slate-100 rounded-lg mb-0.5" id="nav-experiments">
+                    <i class="fa-solid fa-flask w-4"></i>
+                    <span>Experiments</span>
+                </div>
+                <div onclick="switchTab('dataintake')" class="nav-item flex items-center gap-x-3 px-4 py-2 text-sm font-medium text-slate-700 cursor-pointer hover:bg-slate-100 rounded-lg mb-0.5" id="nav-dataintake">
+                    <i class="fa-solid fa-database w-4"></i>
+                    <span>Data Intake</span>
+                </div>
+                <div onclick="switchTab('slack')" class="nav-item flex items-center gap-x-3 px-4 py-2 text-sm font-medium text-slate-700 cursor-pointer hover:bg-slate-100 rounded-lg mb-0.5" id="nav-slack">
+                    <i class="fa-brands fa-slack w-4"></i>
+                    <span>Slack Setup</span>
+                </div>
+                <div onclick="switchTab('query')" class="nav-item flex items-center gap-x-3 px-4 py-2 text-sm font-medium text-slate-700 cursor-pointer hover:bg-slate-100 rounded-lg" id="nav-query">
+                    <i class="fa-solid fa-search w-4"></i>
+                    <span>Self-Serve Query</span>
+                </div>
+                <div onclick="switchTab('request')" class="nav-item flex items-center gap-x-3 px-4 py-2 text-sm font-medium text-slate-700 cursor-pointer hover:bg-slate-100 rounded-lg" id="nav-request">
+                    <i class="fa-solid fa-file-invoice-dollar w-4"></i>
+                    <span>Request Budget</span>
+                </div>
+            </div>
+
+            <div class="p-4 border-t border-slate-100 text-xs text-slate-400 px-6">
+                Paxos • Global Dollar Network<br>
+                Internal prototype • v4
+            </div>
+        </div>
+
+        <!-- MAIN CONTENT -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- TOP BAR -->
+            <div class="h-14 border-b border-slate-200 bg-white px-6 flex items-center justify-between flex-shrink-0">
+                <div class="flex items-center gap-x-4">
+                    <div id="page-title" class="font-semibold text-[21px] tracking-[-0.025em]">Overview</div>
+                    
+                    <!-- Internal / External Toggle -->
+                    <div class="flex items-center bg-slate-100 rounded-full p-0.5 text-xs font-medium">
+                        <div onclick="toggleInternalExternal(true)" id="toggle-internal"
+                             class="px-3 py-1 rounded-full bg-white shadow-sm cursor-pointer flex items-center gap-x-1.5">
+                            <i class="fa-solid fa-lock text-emerald-600 text-xs"></i>
+                            <span class="font-semibold">Internal</span>
+                        </div>
+                        <div onclick="toggleInternalExternal(false)" id="toggle-external"
+                             class="px-3 py-1 rounded-full cursor-pointer flex items-center gap-x-1.5 text-slate-500">
+                            <span class="font-medium">External</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-x-4 text-sm">
+                    <!-- Date Range -->
+                    <div class="flex items-center gap-x-2 text-sm">
+                        <select id="date-range" onchange="applyFilters()" class="bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none">
+                            <option value="thisQuarter">This Quarter (Q3)</option>
+                            <option value="last90">Last 90 Days</option>
+                            <option value="ytd">Year to Date</option>
+                        </select>
+                    </div>
+
+                    <!-- Country Filter -->
+                    <div class="flex items-center gap-x-2 text-sm">
+                        <div class="text-slate-500 text-xs font-medium">COUNTRY</div>
+                        <select id="country-filter" onchange="applyFilters()" class="bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none">
+                            <option value="all">All (US + SG + EU)</option>
+                            <option value="US">United States</option>
+                            <option value="SG">Singapore</option>
+                            <option value="EU">European Union</option>
+                        </select>
+                    </div>
+
+                    <div class="text-xs text-slate-400 flex items-center gap-x-1.5">
+                        <i class="fa-solid fa-sync fa-xs"></i>
+                        <span>Last refreshed <span class="font-medium text-slate-500">4 min ago</span></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CONTENT AREA -->
+            <div class="flex-1 overflow-auto p-4 md:p-6 dashboard-bg" id="content-area">
+                
+                <!-- ==================== OVERVIEW TAB ==================== -->
+                <div id="tab-overview" class="tab-content">
+                    <div class="max-w-[1200px] mx-auto space-y-6">
+                        
+                        <!-- North Star + Framework -->
+                        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                            
+                            <!-- North Star Card -->
+                            <div class="lg:col-span-5 bg-white border border-slate-200 rounded-2xl p-6">
+                                <div class="flex items-start justify-between">
+                                    <div>
+                                        <div class="section-header flex items-center gap-x-2">
+                                            NORTH STAR
+                                            <i onclick="showMetricTooltip('northStar')" class="fa-solid fa-info-circle text-slate-400 hover:text-slate-600 cursor-pointer"></i>
+                                        </div>
+                                        <div class="mt-1 text-3xl font-semibold tracking-tighter kpi-value">2.65B</div>
+                                        <div class="text-emerald-600 text-sm font-medium flex items-center gap-x-1">
+                                            <i class="fa-solid fa-arrow-trend-up"></i>
+                                            <span>+8.0% QoQ</span>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="text-xs text-slate-500">Retained USDG</div>
+                                        <div class="text-xs text-slate-500">Circulating Supply</div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Contribution by Category -->
+                                <div class="mt-6">
+                                    <div class="flex items-center justify-between text-xs mb-2">
+                                        <div class="font-semibold text-slate-600">Contribution by category</div>
+                                        <div onclick="showMetricTooltip('contributionByCategory')" class="cursor-pointer text-slate-400 hover:text-slate-600">
+                                            <i class="fa-solid fa-info-circle"></i>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex items-center gap-x-4">
+                                        <!-- Donut Chart -->
+                                        <div class="relative w-20 h-20">
+                                            <canvas id="contribution-donut" width="80" height="80"></canvas>
+                                        </div>
+                                        
+                                        <div class="flex-1 space-y-2 text-sm">
+                                            <div class="flex items-center justify-between">
+                                                <div class="flex items-center gap-x-2">
+                                                    <div class="w-3 h-3 rounded-full" style="background:#4A6FA5"></div>
+                                                    <span class="text-sm">Liquidity</span>
+                                                </div>
+                                                <span class="font-semibold tabular-nums">45%</span>
+                                            </div>
+                                            <div class="flex items-center justify-between">
+                                                <div class="flex items-center gap-x-2">
+                                                    <div class="w-3 h-3 rounded-full" style="background:#6E8B4C"></div>
+                                                    <span class="text-sm">DeFi</span>
+                                                </div>
+                                                <span class="font-semibold tabular-nums">35%</span>
+                                            </div>
+                                            <div class="flex items-center justify-between">
+                                                <div class="flex items-center gap-x-2">
+                                                    <div class="w-3 h-3 rounded-full" style="background:#A97C50"></div>
+                                                    <span class="text-sm">Marketing</span>
+                                                </div>
+                                                <span class="font-semibold tabular-nums">20%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Liquidity explanation removed per your request -->
+                                </div>
+                            </div>
+
+                            <!-- Framework ROI -->
+                            <div class="lg:col-span-7 bg-white border border-slate-200 rounded-2xl p-6">
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    
+                                    <!-- Financial ROI -->
+                                    <div>
+                                        <div class="section-header flex items-center gap-x-2 mb-3">
+                                            FINANCIAL ROI
+                                            <i onclick="showMetricTooltip('financialROI')" class="fa-solid fa-info-circle text-slate-400 hover:text-slate-600 cursor-pointer"></i>
+                                        </div>
+                                        <div class="flex items-end gap-x-3">
+                                            <div class="text-5xl font-semibold tracking-tighter tabular-nums">1.42<span class="text-3xl font-medium">x</span></div>
+                                            <div class="text-emerald-600 text-sm pb-1 font-medium">Above floor</div>
+                                        </div>
+                                        <div class="text-xs text-slate-500 mt-1">Floor: 1.0x • Conservative cash-only</div>
+                                        
+                                        <div class="mt-4 h-2 bg-slate-100 rounded-full overflow-hidden">
+                                            <div class="h-2 bg-emerald-500 rounded-full" style="width: 85%"></div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Network ROI -->
+                                    <div>
+                                        <div class="section-header flex items-center gap-x-2 mb-3">
+                                            NETWORK ROI
+                                            <i onclick="showMetricTooltip('networkROI')" class="fa-solid fa-info-circle text-slate-400 hover:text-slate-600 cursor-pointer"></i>
+                                        </div>
+                                        <div class="flex items-end gap-x-3">
+                                            <div class="text-5xl font-semibold tracking-tighter tabular-nums">78</div>
+                                            <div class="text-emerald-600 text-sm pb-1 font-medium">/ 100</div>
+                                        </div>
+                                        <div class="text-xs text-slate-500 mt-1">Floor: 60/100 • Composite score</div>
+                                        
+                                        <div class="mt-4 h-2 bg-slate-100 rounded-full overflow-hidden">
+                                            <div class="h-2 bg-emerald-500 rounded-full" style="width: 78%"></div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Yield Distribution -->
+                                    <div>
+                                        <div class="section-header flex items-center gap-x-2 mb-3">
+                                            YIELD DISTRIBUTION
+                                            <i onclick="showMetricTooltip('yieldDistribution')" class="fa-solid fa-info-circle text-slate-400 hover:text-slate-600 cursor-pointer"></i>
+                                        </div>
+                                        <div class="flex items-end gap-x-3">
+                                            <div class="text-5xl font-semibold tracking-tighter tabular-nums">94<span class="text-3xl font-medium">%</span></div>
+                                        </div>
+                                        <div class="text-xs text-emerald-600 mt-1 font-medium">Target &gt;90%</div>
+                                        
+                                        <div class="mt-4 h-2 bg-slate-100 rounded-full overflow-hidden">
+                                            <div class="h-2 bg-emerald-500 rounded-full" style="width: 94%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Secondary KPIs -->
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <!-- Active Usage -->
+                            <div class="bg-white border border-slate-200 rounded-2xl p-5">
+                                <div class="section-header flex items-center gap-x-2">ACTIVE USAGE
+                                    <i onclick="showMetricTooltip('activeUsage')" class="fa-solid fa-info-circle text-slate-400 hover:text-slate-600 cursor-pointer"></i>
+                                </div>
+                                <div class="mt-3 flex items-baseline gap-x-2">
+                                    <div class="text-4xl font-semibold tabular-nums">41,200</div>
+                                </div>
+                                <div class="text-emerald-600 text-sm font-medium">+22% QoQ • +18% active addresses</div>
+                            </div>
+
+                            <!-- Partner Count -->
+                            <div class="bg-white border border-slate-200 rounded-2xl p-5">
+                                <div class="section-header flex items-center gap-x-2">PARTNER COUNT &amp; DIVERSITY
+                                    <i onclick="showMetricTooltip('partnerCount')" class="fa-solid fa-info-circle text-slate-400 hover:text-slate-600 cursor-pointer"></i>
+                                </div>
+                                <div class="mt-3 flex items-baseline gap-x-2">
+                                    <div class="text-4xl font-semibold tabular-nums">34</div>
+                                    <div class="text-emerald-600 text-sm font-medium">+5 net new</div>
+                                </div>
+                                <div class="mt-3 flex gap-x-4 text-xs">
+                                    <div>Exchanges <span class="font-semibold">11</span></div>
+                                    <div>DeFi <span class="font-semibold">9</span></div>
+                                    <div>Payments <span class="font-semibold">8</span></div>
+                                    <div>Treasury <span class="font-semibold">6</span></div>
+                                </div>
+                            </div>
+
+                            <!-- Chain Reach -->
+                            <div class="bg-white border border-slate-200 rounded-2xl p-5">
+                                <div class="section-header flex items-center gap-x-2">MULTI-CHAIN / GEO REACH
+                                    <i onclick="showMetricTooltip('chainReach')" class="fa-solid fa-info-circle text-slate-400 hover:text-slate-600 cursor-pointer"></i>
+                                </div>
+                                <div class="mt-3 flex items-baseline gap-x-2">
+                                    <div class="text-4xl font-semibold tabular-nums">6</div>
+                                    <span class="text-sm text-slate-500">chains</span>
+                                </div>
+                                <div class="text-sm mt-1">3 countries • <span class="font-medium">US, SG, EU</span></div>
+                                <div class="mt-2 text-xs text-slate-500">Ethereum, Solana, Base, Arbitrum, Polygon, Avalanche</div>
+                            </div>
+
+                            <!-- Cross-category banner -->
+                            <div class="bg-amber-50 border border-amber-200 rounded-2xl p-5 text-sm">
+                                <div class="font-semibold text-amber-700 flex items-center gap-x-2">
+                                    <i class="fa-solid fa-lightbulb"></i>
+                                    <span>Cross-category signal</span>
+                                </div>
+                                <div class="mt-2 text-amber-800 text-xs leading-snug">
+                                    Marketing co-marketing with Galaxy Digital drove <span class="font-semibold">12%</span> of new Liquidity AUM — potential future Liquidity spend reduction.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Project Health Strip -->
+                        <div class="bg-white border border-slate-200 rounded-2xl p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <div>
+                                    <span class="font-semibold text-base">How this system is doing — project health, not a GDN metric</span>
+                                </div>
+                                <div class="text-xs px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full font-medium">Project North Star</div>
+                            </div>
+                            
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-sm">
+                                <div>
+                                    <div class="text-xs text-slate-500">ROI metrics auto-computed</div>
+                                    <div class="mt-1 flex items-baseline gap-x-2">
+                                        <span class="text-3xl font-semibold tabular-nums">62</span>
+                                        <span class="text-lg text-slate-400">/100</span>
+                                    </div>
+                                    <div class="text-emerald-600 text-xs font-medium">Target &gt;80%</div>
+                                </div>
+                                <div>
+                                    <div class="text-xs text-slate-500">Sales questions resolved without S&amp;O</div>
+                                    <div class="mt-1 flex items-baseline gap-x-2">
+                                        <span class="text-3xl font-semibold tabular-nums">71</span>
+                                        <span class="text-lg text-slate-400">%</span>
+                                    </div>
+                                    <div class="text-emerald-600 text-xs font-medium">Target &gt;70%</div>
+                                </div>
+                                <div>
+                                    <div class="text-xs text-slate-500">NAC pack production time</div>
+                                    <div class="mt-1 flex items-baseline gap-x-2">
+                                        <span class="text-3xl font-semibold tabular-nums">6</span>
+                                        <span class="text-lg text-slate-400">hrs</span>
+                                    </div>
+                                    <div class="text-xs text-slate-500">Previously days</div>
+                                </div>
+                                <div>
+                                    <div class="text-xs text-slate-500">Days since last stale report</div>
+                                    <div class="mt-1 flex items-baseline gap-x-2">
+                                        <span class="text-3xl font-semibold tabular-nums">2</span>
+                                    </div>
+                                    <div class="text-emerald-600 text-xs font-medium">Healthy</div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- ==================== LIQUIDITY TAB ==================== -->
+                <div id="tab-liquidity" class="tab-content hidden">
+                    <div class="max-w-[1200px] mx-auto">
+                        <div class="mb-6">
+                            <h2 class="text-2xl font-semibold tracking-tight">Liquidity</h2>
+                            <p class="text-slate-500 text-sm">Market making • Venue performance &amp; guardrails</p>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+                            <div class="bg-white border rounded-2xl p-5">
+                                <div class="text-xs text-slate-500">Budget Utilized</div>
+                                <div class="text-4xl font-semibold tabular-nums mt-1">81%</div>
+                                <div class="text-xs mt-1">$1.45M / $1.8M</div>
+                            </div>
+                            <div class="bg-white border rounded-2xl p-5">
+                                <div class="text-xs text-slate-500">Avg Market Depth</div>
+                                <div class="text-4xl font-semibold tabular-nums mt-1">$4.2M</div>
+                                <div class="text-emerald-600 text-xs">+15% QoQ</div>
+                            </div>
+                            <div class="bg-white border rounded-2xl p-5">
+                                <div class="text-xs text-slate-500">Avg Bid-Ask Spread</div>
+                                <div class="text-4xl font-semibold tabular-nums mt-1">4.2 <span class="text-xl">bps</span></div>
+                            </div>
+                            <div class="bg-white border rounded-2xl p-5">
+                                <div class="text-xs text-slate-500">Uptime</div>
+                                <div class="text-4xl font-semibold tabular-nums mt-1">99.4%</div>
+                            </div>
+                            <div class="bg-white border rounded-2xl p-5">
+                                <div class="text-xs text-slate-500">Slippage on $1M Clip</div>
+                                <div class="text-4xl font-semibold tabular-nums mt-1">6.1 <span class="text-xl">bps</span></div>
+                                <div class="text-xs text-emerald-600">Guardrail met</div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+                            <div class="px-6 py-4 border-b flex items-center justify-between">
+                                <div class="font-semibold">Venue Performance</div>
+                                <div class="text-xs text-slate-500">All venues • Internal data shown</div>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-sm data-table min-w-[700px]">
+                                <thead>
+                                    <tr class="border-b">
+                                        <th class="text-left px-6 py-3">Venue</th>
+                                        <th class="text-right px-4 py-3">Remaining Budget</th>
+                                        <th class="text-right px-4 py-3">Spread (bps)</th>
+                                        <th class="text-right px-4 py-3">Slippage $1M</th>
+                                        <th class="text-right px-4 py-3">Uptime</th>
+                                        <th class="text-right px-4 py-3">Financial ROI</th>
+                                        <th class="text-right px-4 py-3">Network ROI</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="liquidity-table-body" class="divide-y"></tbody>
+                            </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==================== DEFI TAB ==================== -->
+                <div id="tab-defi" class="tab-content hidden">
+                    <div class="max-w-[1200px] mx-auto">
+                        <div class="mb-6">
+                            <h2 class="text-2xl font-semibold tracking-tight">DeFi Incentives</h2>
+                            <p class="text-slate-500 text-sm">Liquidity mining • Guardrails: Mercenary Ratio + Retention</p>
+                        </div>
+
+                        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+                            <div class="bg-white border rounded-2xl p-5">
+                                <div class="text-xs text-slate-500">Incentives Distributed</div>
+                                <div class="text-4xl font-semibold tabular-nums mt-1">76%</div>
+                                <div class="text-xs">$720K / $950K</div>
+                            </div>
+                            <div class="bg-white border rounded-2xl p-5">
+                                <div class="text-xs text-slate-500">TVL in Pools</div>
+                                <div class="text-4xl font-semibold tabular-nums mt-1">$142M</div>
+                                <div class="text-emerald-600 text-xs">+38% during campaign</div>
+                            </div>
+                            <div class="bg-white border rounded-2xl p-5">
+                                <div class="text-xs text-slate-500">Volume / TVL Turnover</div>
+                                <div class="text-4xl font-semibold tabular-nums mt-1">6.3x</div>
+                            </div>
+                            <div class="bg-white border rounded-2xl p-5">
+                                <div class="text-xs text-slate-500">Unique Wallets</div>
+                                <div class="text-4xl font-semibold tabular-nums mt-1">18,400</div>
+                            </div>
+                            <div class="bg-white border rounded-2xl p-5">
+                                <div class="text-xs text-slate-500">Mercenary Ratio (14d)</div>
+                                <div class="text-4xl font-semibold tabular-nums mt-1">22%</div>
+                                <div class="text-xs text-amber-600">Guardrail</div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white border rounded-2xl p-6 mb-6">
+                            <div class="font-semibold mb-4">TVL Before / During / After Campaign</div>
+                            <canvas id="defi-tvl-chart" height="90"></canvas>
+                        </div>
+
+                        <div class="bg-white border rounded-2xl overflow-hidden">
+                            <div class="px-6 py-4 border-b font-semibold">Protocol Performance</div>
+                            <table class="w-full text-sm data-table">
+                                <thead>
+                                    <tr class="border-b bg-slate-50">
+                                        <th class="text-left px-6 py-3">Protocol</th>
+                                        <th class="text-right px-4 py-3">Financial ROI</th>
+                                        <th class="text-right px-4 py-3">Network ROI</th>
+                                        <th class="text-right px-4 py-3">Retention 90d</th>
+                                        <th class="text-right px-4 py-3">Cost / $1K TVL</th>
+                                        <th class="text-right px-4 py-3">Mercenary 14d</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="defi-table-body" class="divide-y"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==================== MARKETING TAB ==================== -->
+                <div id="tab-marketing" class="tab-content hidden">
+                    <div class="max-w-[1200px] mx-auto">
+                        <div class="mb-6">
+                            <h2 class="text-2xl font-semibold tracking-tight">Marketing &amp; Co-Marketing</h2>
+                            <p class="text-slate-500 text-sm">Partner campaigns • Funnel + Guardrails</p>
+                        </div>
+
+                        <!-- Funnel Section - IMPROVED with time series insight -->
+                        <div class="bg-white border border-slate-200 rounded-2xl p-6 mb-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <div>
+                                    <div class="font-semibold">Acquisition Funnel</div>
+                                    <div class="text-xs text-slate-500">Impressions → Wallet Connect → Activation → Retained AUM</div>
+                                </div>
+                                <div onclick="showMetricTooltip('funnel')" class="cursor-pointer text-slate-400 hover:text-slate-600">
+                                    <i class="fa-solid fa-info-circle"></i>
+                                </div>
+                            </div>
+
+                            <!-- Current Funnel Visualization -->
+                            <div class="grid grid-cols-4 gap-3 mb-6">
+                                <div class="bg-slate-50 rounded-xl p-4">
+                                    <div class="text-xs text-slate-500">IMPRESSIONS</div>
+                                    <div class="text-3xl font-semibold tabular-nums mt-1">12.4M</div>
+                                </div>
+                                <div class="bg-slate-50 rounded-xl p-4">
+                                    <div class="text-xs text-slate-500">WALLET CONNECT</div>
+                                    <div class="text-3xl font-semibold tabular-nums mt-1">620K</div>
+                                    <div class="text-xs text-emerald-600 mt-0.5">5.0% of impressions</div>
+                                </div>
+                                <div class="bg-slate-50 rounded-xl p-4">
+                                    <div class="text-xs text-slate-500">ACTIVATION</div>
+                                    <div class="text-3xl font-semibold tabular-nums mt-1">4,200</div>
+                                    <div class="text-xs text-emerald-600 mt-0.5">0.68% of connects</div>
+                                </div>
+                                <div class="bg-slate-50 rounded-xl p-4">
+                                    <div class="text-xs text-slate-500">RETAINED AUM</div>
+                                    <div class="text-3xl font-semibold tabular-nums mt-1">$210M</div>
+                                    <div class="text-xs text-emerald-600 mt-0.5">50x from activation</div>
+                                </div>
+                            </div>
+
+                            <!-- Trend Chart for Funnel Insight -->
+                            <div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <div class="text-sm font-semibold">Funnel Trend (Last 8 Weeks)</div>
+                                    <div class="text-xs text-slate-500">Shows where drop-off is improving</div>
+                                </div>
+                                <canvas id="marketing-funnel-trend" height="110"></canvas>
+                                <div class="flex justify-between text-[10px] text-slate-400 mt-1 px-1">
+                                    <div>Impressions shown in millions</div>
+                                    <div>Wallet Connect &amp; Activation in actual counts</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white border rounded-2xl overflow-hidden">
+                            <div class="px-6 py-4 border-b flex justify-between items-center">
+                                <div class="font-semibold">Partner Performance</div>
+                            </div>
+                            <table class="w-full text-sm data-table">
+                                <thead>
+                                    <tr class="border-b bg-slate-50">
+                                        <th class="text-left px-6 py-3">Partner</th>
+                                        <th class="text-right px-4 py-3">Cost / Activation</th>
+                                        <th class="text-right px-4 py-3">Pre-Campaign AUM</th>
+                                        <th class="text-right px-4 py-3">Attributed AUM</th>
+                                        <th class="text-right px-4 py-3">Financial ROI</th>
+                                        <th class="text-right px-4 py-3">Retention 90d</th>
+                                        <th class="text-center px-4 py-3">KPI Compliant</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="marketing-table-body" class="divide-y"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==================== EXPERIMENTS TAB ==================== -->
+                <div id="tab-experiments" class="tab-content hidden">
+                    <div class="max-w-[1200px] mx-auto">
+                        <h2 class="text-2xl font-semibold tracking-tight mb-6">Incrementality Experiments</h2>
+                        
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <!-- Experiment 1 -->
+                            <div class="bg-white border rounded-2xl p-6">
+                                <div class="font-semibold">DeFi Incentive — Protocol Y</div>
+                                <div class="text-xs text-emerald-600 mt-1">95% confidence • Holdout cohort</div>
+                                <div class="mt-4">
+                                    <canvas id="exp1-chart" height="120"></canvas>
+                                </div>
+                                <div class="mt-4 text-sm">
+                                    <span class="font-semibold text-emerald-600">+28% lift</span> — Statistically significant. Safe to scale.
+                                </div>
+                            </div>
+
+                            <!-- Experiment 2 -->
+                            <div class="bg-white border rounded-2xl p-6">
+                                <div class="font-semibold">Marketing — Galaxy Digital</div>
+                                <div class="text-xs text-amber-600 mt-1">Medium confidence • Synthetic control</div>
+                                <div class="mt-4">
+                                    <canvas id="exp2-chart" height="120"></canvas>
+                                </div>
+                                <div class="mt-4 text-sm">
+                                    <span class="font-semibold">+$120M incremental AUM</span> — Directionally strong.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==================== DATA INTAKE TAB ==================== -->
+                <div id="tab-dataintake" class="tab-content hidden">
+                    <div class="max-w-[1100px] mx-auto">
+                        <h2 class="text-2xl font-semibold tracking-tight mb-2">Data Intake</h2>
+                        <p class="text-slate-500 mb-6">AI extraction + reconciliation preview</p>
+
+                        <div class="bg-white border rounded-2xl p-6 mb-6">
+                            <div class="font-medium mb-3">Sample partner reports</div>
+                            <div class="flex gap-3">
+                                <button onclick="loadSampleReport(0)" class="px-4 py-2 text-sm bg-slate-100 hover:bg-slate-200 rounded-xl">Clean email</button>
+                                <button onclick="loadSampleReport(1)" class="px-4 py-2 text-sm bg-slate-100 hover:bg-slate-200 rounded-xl">Messy PDF</button>
+                                <button onclick="loadSampleReport(2)" class="px-4 py-2 text-sm bg-slate-100 hover:bg-slate-200 rounded-xl">On-chain summary</button>
+                            </div>
+                            
+                            <textarea id="raw-text" class="w-full mt-4 border rounded-xl p-4 text-sm font-mono h-28" placeholder="Paste partner report here..."></textarea>
+                            
+                            <button onclick="extractData()" class="mt-4 px-6 py-2.5 bg-slate-900 text-white text-sm rounded-2xl font-medium">Extract fields →</button>
+                        </div>
+
+                        <div id="extraction-result" class="hidden bg-white border rounded-2xl p-6">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==================== SLACK SETUP TAB ==================== -->
+                <div id="tab-slack" class="tab-content hidden">
+                    <div class="max-w-[900px] mx-auto bg-white border rounded-2xl p-8">
+                        <h2 class="text-2xl font-semibold tracking-tight">Slack Integration</h2>
+                        <div class="mt-6 space-y-6">
+                            <div>
+                                <label class="text-sm font-medium">Channel</label>
+                                <input type="text" value="#gdn-sales" class="mt-1 w-full border rounded-xl px-4 py-2.5">
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <div class="font-medium">Weekly digest</div>
+                                    <div class="text-xs text-slate-500">Every Monday at 9am</div>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" checked class="sr-only peer">
+                                    <div class="w-11 h-6 bg-emerald-500 peer-focus:outline-none rounded-full peer"></div>
+                                </label>
+                            </div>
+                            <button class="px-8 py-3 bg-emerald-600 text-white rounded-2xl font-medium">Connect to Slack</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==================== SELF-SERVE QUERY TAB ==================== -->
+                <div id="tab-query" class="tab-content hidden">
+                    <div class="max-w-[900px] mx-auto">
+                        <h2 class="text-2xl font-semibold tracking-tight mb-6">Self-Serve Query</h2>
+                        
+                        <div class="bg-white border rounded-2xl p-6">
+                            <input id="query-input" type="text" placeholder="Ask anything about budget, ROI, partners..." 
+                                   class="w-full border rounded-2xl px-5 py-3 text-lg focus:outline-none">
+                            
+                            <div class="mt-4 flex flex-wrap gap-2" id="suggested-queries">
+                                <!-- Populated by JS -->
+                            </div>
+                            
+                            <div id="query-result" class="hidden mt-6 p-5 bg-slate-50 rounded-2xl text-sm"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==================== REQUEST BUDGET TAB ==================== -->
+                <div id="tab-request" class="tab-content hidden">
+                    <div class="max-w-[700px] mx-auto">
+                        <div class="mb-6">
+                            <h2 class="text-2xl font-semibold tracking-tight">Request Budget</h2>
+                            <p class="text-slate-500 text-sm mt-1">Submit a new budget request. This replaces one-off emails to Network S&O.</p>
+                        </div>
+
+                        <div class="bg-white border border-slate-200 rounded-2xl p-8">
+                            <form id="budget-request-form" onsubmit="submitBudgetRequest(event)">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    
+                                    <!-- Category -->
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-700 mb-1.5">Category</label>
+                                        <select id="req-category" required class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-slate-400">
+                                            <option value="">Select category</option>
+                                            <option value="Liquidity">Liquidity</option>
+                                            <option value="DeFi">DeFi Incentives</option>
+                                            <option value="Marketing">Marketing / Co-marketing</option>
+                                        </select>
+                                    </div>
+
+                                    <!-- Partner / Program -->
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-700 mb-1.5">Partner / Program</label>
+                                        <input type="text" id="req-partner" placeholder="e.g. Kraken Q3 Liquidity" required
+                                               class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-slate-400">
+                                    </div>
+
+                                    <!-- Requested Amount -->
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-700 mb-1.5">Requested Amount (USD)</label>
+                                        <input type="number" id="req-amount" placeholder="250000" required
+                                               class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-slate-400">
+                                    </div>
+
+                                    <!-- Quarter / Period -->
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-700 mb-1.5">Quarter / Period</label>
+                                        <input type="text" id="req-period" placeholder="Q3 2026" required
+                                               class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-slate-400">
+                                    </div>
+                                </div>
+
+                                <!-- Business Justification -->
+                                <div class="mt-6">
+                                    <label class="block text-sm font-medium text-slate-700 mb-1.5">Business Justification</label>
+                                    <textarea id="req-justification" rows="4" placeholder="Brief explanation of why this budget is needed and expected impact..." required
+                                              class="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-slate-400"></textarea>
+                                </div>
+
+                                <!-- File Upload -->
+                                <div class="mt-6">
+                                    <label class="block text-sm font-medium text-slate-700 mb-1.5">Attachment (optional)</label>
+                                    <div class="border border-dashed border-slate-300 rounded-2xl p-6 text-center hover:border-slate-400 transition-colors">
+                                        <input type="file" id="req-file" class="hidden" onchange="updateFileName(this)">
+                                        <label for="req-file" class="cursor-pointer">
+                                            <i class="fa-solid fa-cloud-upload-alt text-2xl text-slate-400 mb-2"></i>
+                                            <div class="text-sm text-slate-600">Click to upload or drag and drop</div>
+                                            <div class="text-xs text-slate-400 mt-0.5">PDF, Excel, or Word (max 10MB)</div>
+                                        </label>
+                                        <div id="file-name" class="mt-3 text-sm text-emerald-600 font-medium hidden"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Submit Button -->
+                                <div class="mt-8">
+                                    <button type="submit" 
+                                            class="w-full bg-slate-900 hover:bg-black text-white font-medium py-3.5 rounded-2xl transition-colors flex items-center justify-center gap-x-2">
+                                        <i class="fa-solid fa-paper-plane"></i>
+                                        <span>Submit Budget Request</span>
+                                    </button>
+                                    <p class="text-center text-xs text-slate-500 mt-3">Request will be logged and routed to Network S&O for review.</p>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Metric Tooltip Modal -->
+    <div id="tooltip-modal" onclick="hideTooltipModal()" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+        <div onclick="event.stopImmediatePropagation()" class="bg-white rounded-2xl w-full max-w-md p-6">
+            <div id="tooltip-content"></div>
+            <button onclick="hideTooltipModal()" class="mt-5 text-sm text-slate-500 hover:text-slate-700">Close</button>
+        </div>
+    </div>
+
+    <script>
+        // ==================== DATA ====================
+        // We embed the key data from mockData.ts directly for the single-file prototype
+        
+        const metricDefinitions = [
+            { id: "northStar", label: "Retained USDG Circulating Supply", definition: "USDG AUM that remains on-network after decay/churn, not gross mint.", whyItMatters: "The one metric that shows whether the flywheel is compounding, not just spinning." },
+            { id: "financialROI", label: "Financial ROI", definition: "Conservative, cash-only return on spend.", whyItMatters: "Board-facing view for Advisory Committee approval and cash-discipline checks.", formula: "(Retention-adjusted LTV × yield × margin) ÷ Spend. Floor: 1.0x" },
+            { id: "networkROI", label: "Network ROI", definition: "Weighted composite of Position Replacement Value, liquidity quality, utility mix, and velocity — each normalized 0–100.", whyItMatters: "Explains why sub-1x-financial programs can still be the right call.", formula: "Composite score ÷ 100. Floor: 60/100" },
+            { id: "yieldDistribution", label: "Yield Distribution Rate", definition: "Share of reserve earnings paid out to network partners rather than retained by Paxos.", whyItMatters: "Core economic differentiator vs. issuer-captures-everything models; target >90%." },
+            { id: "partnerCount", label: "Partner Count & Diversity", definition: "Total active GDN partners and net new this quarter.", whyItMatters: "Breadth of distribution reach — a leading indicator of durability." },
+            { id: "chainReach", label: "Multi-Chain / Geographic Reach", definition: "Number of chains and countries with active coverage.", whyItMatters: "Proxy for durability beyond any single venue or jurisdiction." },
+            { id: "contributionByCategory", label: "Contribution by Category", definition: "Share of retained USDG AUM attributed to each spend category.", whyItMatters: "Shows where the network is growing from." },
+            { id: "funnel", label: "Acquisition Funnel", definition: "Impressions → Wallet Connect → Activation → Retained AUM", whyItMatters: "Core conversion view for growth programs." }
+        ];
+
+        const northStar = { value: 2650000000, qoqChange: 0.08, contributionByCategory: { liquidity: 0.45, defi: 0.35, marketing: 0.20 } };
+        
+        const liquidityTable = [
+            { venue: "Kraken", country: "US", remainingBudget: 320000, spreadBps: 3.8, slippageBpsOn1MClip: 4.5, uptimePct: 0.998, financialROI: 1.72, networkROI: 88 },
+            { venue: "OKX", country: "SG", remainingBudget: 210000, spreadBps: 4.1, slippageBpsOn1MClip: 5.2, uptimePct: 0.996, financialROI: 1.58, networkROI: 82 },
+            { venue: "Robinhood", country: "US", remainingBudget: 180000, spreadBps: 4.6, slippageBpsOn1MClip: 6.0, uptimePct: 0.993, financialROI: 1.40, networkROI: 76 },
+            { venue: "Bullish", country: "SG", remainingBudget: 95000, spreadBps: 5.2, slippageBpsOn1MClip: 7.4, uptimePct: 0.991, financialROI: 1.15, networkROI: 68 },
+            { venue: "Anchorage Digital", country: "US", remainingBudget: 60000, spreadBps: 5.9, slippageBpsOn1MClip: 8.9, uptimePct: 0.988, financialROI: 0.92, networkROI: 63 },
+            { venue: "Bitstamp", country: "EU", remainingBudget: 88000, spreadBps: 4.9, slippageBpsOn1MClip: 6.7, uptimePct: 0.992, financialROI: 1.22, networkROI: 74 }
+        ];
+
+        const defiTable = [
+            { protocol: "Kamino", chain: "Solana", country: "SG", financialROI: 0.95, networkROI: 74, retention90d: 0.58, costPer1kTVL: 0.09, mercenaryRatio14d: 0.14 },
+            { protocol: "JupLend", chain: "Solana", country: "SG", financialROI: 0.85, networkROI: 70, retention90d: 0.52, costPer1kTVL: 0.11, mercenaryRatio14d: 0.19 },
+            { protocol: "Protocol Y", chain: "Ethereum", country: "US", financialROI: 0.70, networkROI: 63, retention90d: 0.41, costPer1kTVL: 0.14, mercenaryRatio14d: 0.31 },
+            { protocol: "Protocol Z", chain: "Base", country: "US", financialROI: 0.55, networkROI: 51, retention90d: 0.29, costPer1kTVL: 0.19, mercenaryRatio14d: 0.47 },
+            { protocol: "DEX Partner Q", chain: "Ethereum", country: "EU", financialROI: 1.05, networkROI: 79, retention90d: 0.61, costPer1kTVL: 0.08, mercenaryRatio14d: 0.11 },
+            { protocol: "DEX Partner R", chain: "Solana", country: "SG", financialROI: 0.90, networkROI: 72, retention90d: 0.55, costPer1kTVL: 0.10, mercenaryRatio14d: 0.17 }
+        ];
+
+        const marketingTable = [
+            { partner: "Robinhood", country: "US", costPerActivation: 42000, preCampaignAUM: 22000000, attributedAUM: 180000000, financialROI: 1.20, retention90d: 0.78, kpiCompliant: true },
+            { partner: "Mastercard", country: "US", costPerActivation: 65000, preCampaignAUM: 12000000, attributedAUM: 95000000, financialROI: 0.95, retention90d: 0.61, kpiCompliant: true },
+            { partner: "OKX", country: "SG", costPerActivation: 38000, preCampaignAUM: 18000000, attributedAUM: 70000000, financialROI: 1.10, retention90d: 0.66, kpiCompliant: true },
+            { partner: "Galaxy Digital", country: "US", costPerActivation: 54000, preCampaignAUM: 9000000, attributedAUM: 120000000, financialROI: 1.05, retention90d: 0.70, kpiCompliant: true, highlight: "Recruited active market-maker" },
+            { partner: "DBS Bank", country: "SG", costPerActivation: 71000, preCampaignAUM: 14000000, attributedAUM: 40000000, financialROI: 0.68, retention90d: 0.44, kpiCompliant: false },
+            { partner: "Bitpanda", country: "EU", costPerActivation: 47000, preCampaignAUM: 16000000, attributedAUM: 62000000, financialROI: 1.02, retention90d: 0.64, kpiCompliant: true }
+        ];
+
+        const marketingFunnel = [
+            { stage: "Impressions", value: 12400000 },
+            { stage: "Wallet Connect", value: 620000 },
+            { stage: "Activation", value: 4200 },
+            { stage: "Retained AUM ($)", value: 210000000 }
+        ];
+
+        // ==================== STATE ====================
+        let isInternal = true;
+        let currentCountry = "all";
+
+        // ==================== UTILS ====================
+        function formatCurrency(num) {
+            if (num >= 1000000000) return (num / 1000000000).toFixed(2) + "B";
+            if (num >= 1000000) return "$" + (num / 1000000).toFixed(0) + "M";
+            if (num >= 1000) return "$" + (num / 1000).toFixed(0) + "K";
+            return "$" + num.toLocaleString();
+        }
+
+        function formatNumber(num) {
+            return num.toLocaleString();
+        }
+
+        // ==================== TOOLTIP ====================
+        function showMetricTooltip(metricId) {
+            const def = metricDefinitions.find(d => d.id === metricId);
+            if (!def) return;
+
+            const modal = document.getElementById("tooltip-modal");
+            const content = document.getElementById("tooltip-content");
+            
+            content.innerHTML = `
+                <div class="font-semibold text-lg mb-1">${def.label}</div>
+                <div class="text-sm text-slate-600 mb-4">${def.definition}</div>
+                <div class="text-xs uppercase tracking-wider text-slate-500 mb-1">Why it matters</div>
+                <div class="text-sm">${def.whyItMatters}</div>
+                ${def.formula ? `<div class="mt-4 text-xs bg-slate-50 p-3 rounded-xl"><span class="font-mono text-slate-500">Formula:</span> ${def.formula}</div>` : ''}
+            `;
+            modal.classList.remove("hidden");
+            modal.classList.add("flex");
+        }
+
+        function hideTooltipModal() {
+            const modal = document.getElementById("tooltip-modal");
+            modal.classList.remove("flex");
+            modal.classList.add("hidden");
+        }
+
+        // ==================== TAB SWITCHING ====================
+        function switchTab(tab) {
+            // Hide all
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            
+            // Show selected
+            const content = document.getElementById(`tab-${tab}`);
+            if (content) content.classList.remove('hidden');
+
+            // Update nav active state
+            document.querySelectorAll('[id^="nav-"]').forEach(el => el.classList.remove('tab-active', 'bg-slate-900', 'text-white'));
+            const navEl = document.getElementById(`nav-${tab}`);
+            if (navEl) navEl.classList.add('tab-active', 'bg-slate-900', 'text-white');
+
+            // Update page title
+            const titles = {
+                overview: "Overview",
+                liquidity: "Liquidity",
+                defi: "DeFi Incentives",
+                marketing: "Marketing & Co-Marketing",
+                experiments: "Incrementality Experiments",
+                dataintake: "Data Intake",
+                slack: "Slack Setup",
+                query: "Self-Serve Query",
+                request: "Request Budget"
+            };
+            document.getElementById("page-title").textContent = titles[tab] || "GDN Ops Console";
+
+            // Initialize charts when tab becomes visible
+            if (tab === 'defi') initDefiCharts();
+            if (tab === 'marketing') initMarketingCharts();
+            if (tab === 'experiments') initExperimentCharts();
+            if (tab === 'overview') initOverviewDonut();
+        }
+
+        // ==================== FILTERS ====================
+        function applyFilters() {
+            currentCountry = document.getElementById("country-filter").value;
+            renderLiquidityTable();
+            renderDefiTable();
+            renderMarketingTable();
+        }
+
+        function toggleInternalExternal(internal) {
+            isInternal = internal;
+            
+            const intBtn = document.getElementById("toggle-internal");
+            const extBtn = document.getElementById("toggle-external");
+            
+            if (internal) {
+                intBtn.classList.add("bg-white", "shadow-sm");
+                extBtn.classList.remove("bg-white", "shadow-sm");
+            } else {
+                extBtn.classList.add("bg-white", "shadow-sm");
+                intBtn.classList.remove("bg-white", "shadow-sm");
+            }
+            
+            renderLiquidityTable();
+            renderDefiTable();
+            renderMarketingTable();
+        }
+
+        // ==================== RENDER TABLES ====================
+        function renderLiquidityTable() {
+            const tbody = document.getElementById("liquidity-table-body");
+            tbody.innerHTML = "";
+
+            let filtered = liquidityTable;
+            if (currentCountry !== "all") {
+                filtered = filtered.filter(r => r.country === currentCountry);
+            }
+
+            filtered.forEach(row => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td class="px-6 py-3 font-medium">${row.venue}</td>
+                    <td class="px-4 py-3 text-right tabular-nums">${formatCurrency(row.remainingBudget)}</td>
+                    <td class="px-4 py-3 text-right tabular-nums">${row.spreadBps}</td>
+                    <td class="px-4 py-3 text-right tabular-nums">${row.slippageBpsOn1MClip}</td>
+                    <td class="px-4 py-3 text-right"><span class="pill bg-emerald-100 text-emerald-700">${(row.uptimePct * 100).toFixed(1)}%</span></td>
+                    <td class="px-4 py-3 text-right font-semibold tabular-nums">${row.financialROI.toFixed(2)}x</td>
+                    <td class="px-4 py-3 text-right"><span class="pill bg-emerald-100 text-emerald-700">${row.networkROI}</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderDefiTable() {
+            const tbody = document.getElementById("defi-table-body");
+            tbody.innerHTML = "";
+
+            let filtered = defiTable;
+            if (currentCountry !== "all") {
+                filtered = filtered.filter(r => r.country === currentCountry);
+            }
+
+            filtered.forEach(row => {
+                const tr = document.createElement("tr");
+                const mercenaryColor = row.mercenaryRatio14d > 0.3 ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700";
+                
+                tr.innerHTML = `
+                    <td class="px-6 py-3 font-medium">${row.protocol} <span class="text-xs text-slate-400">(${row.chain})</span></td>
+                    <td class="px-4 py-3 text-right font-semibold tabular-nums">${row.financialROI.toFixed(2)}x</td>
+                    <td class="px-4 py-3 text-right"><span class="pill bg-emerald-100 text-emerald-700">${row.networkROI}</span></td>
+                    <td class="px-4 py-3 text-right tabular-nums">${(row.retention90d * 100).toFixed(0)}%</td>
+                    <td class="px-4 py-3 text-right tabular-nums">$${row.costPer1kTVL}</td>
+                    <td class="px-4 py-3 text-right"><span class="pill ${mercenaryColor}">${(row.mercenaryRatio14d * 100).toFixed(0)}%</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderMarketingTable() {
+            const tbody = document.getElementById("marketing-table-body");
+            tbody.innerHTML = "";
+
+            let filtered = marketingTable;
+            if (currentCountry !== "all") {
+                filtered = filtered.filter(r => r.country === currentCountry);
+            }
+
+            filtered.forEach(row => {
+                const compliantPill = row.kpiCompliant 
+                    ? `<span class="pill bg-emerald-100 text-emerald-700 px-3">Compliant</span>` 
+                    : `<span class="pill bg-red-100 text-red-700 px-3">Overdue</span>`;
+                
+                tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td class="px-6 py-3 font-medium">${row.partner}</td>
+                    <td class="px-4 py-3 text-right tabular-nums">$${row.costPerActivation.toLocaleString()}</td>
+                    <td class="px-4 py-3 text-right tabular-nums">${formatCurrency(row.preCampaignAUM)}</td>
+                    <td class="px-4 py-3 text-right font-semibold tabular-nums">${formatCurrency(row.attributedAUM)}</td>
+                    <td class="px-4 py-3 text-right font-semibold tabular-nums">${row.financialROI.toFixed(2)}x</td>
+                    <td class="px-4 py-3 text-right tabular-nums">${(row.retention90d * 100).toFixed(0)}%</td>
+                    <td class="px-4 py-3 text-center">${compliantPill}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // ==================== CHARTS ====================
+        let contributionChartInstance = null;
+
+        function initOverviewDonut() {
+            const ctx = document.getElementById("contribution-donut");
+            if (!ctx) return;
+
+            if (contributionChartInstance) contributionChartInstance.destroy();
+
+            contributionChartInstance = new Chart(ctx, {
+                type: "doughnut",
+                data: {
+                    labels: ["Liquidity", "DeFi", "Marketing"],
+                    datasets: [{
+                        data: [45, 35, 20],
+                        backgroundColor: ["#4A6FA5", "#6E8B4C", "#A97C50"],
+                        borderWidth: 3,
+                        borderColor: "#fff"
+                    }]
+                },
+                options: {
+                    cutout: "72%",
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { callbacks: { label: (ctx) => ctx.label + ": " + ctx.raw + "%" } }
+                    }
+                }
+            });
+        }
+
+        function initDefiCharts() {
+            // TVL Before/During/After
+            const ctx = document.getElementById("defi-tvl-chart");
+            if (!ctx) return;
+
+            new Chart(ctx, {
+                type: "bar",
+                data: {
+                    labels: ["Before", "During", "After (30d)"],
+                    datasets: [{
+                        label: "TVL ($M)",
+                        data: [103, 142, 121],
+                        backgroundColor: ["#64748b", "#0F172A", "#475569"],
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, grid: { color: "#f1e7ff" } } }
+                }
+            });
+        }
+
+        let marketingTrendChart = null;
+
+        function initMarketingCharts() {
+            // Funnel trend line chart (improved insight)
+            const ctx = document.getElementById("marketing-funnel-trend");
+            if (!ctx) return;
+
+            if (marketingTrendChart) marketingTrendChart.destroy();
+
+            marketingTrendChart = new Chart(ctx, {
+                type: "line",
+                data: {
+                    labels: ["W1", "W2", "W3", "W4", "W5", "W6", "W7", "W8"],
+                    datasets: [
+                        {
+                            label: "Impressions (M)",
+                            data: [9.8, 10.4, 11.1, 11.8, 12.0, 12.3, 12.5, 12.4],
+                            borderColor: "#4A6FA5",
+                            tension: 0.3,
+                            borderWidth: 2
+                        },
+                        {
+                            label: "Wallet Connect (K)",
+                            data: [480, 510, 545, 580, 595, 610, 625, 620],
+                            borderColor: "#6E8B4C",
+                            tension: 0.3,
+                            borderWidth: 2
+                        },
+                        {
+                            label: "Activation",
+                            data: [3100, 3350, 3600, 3850, 3950, 4100, 4150, 4200],
+                            borderColor: "#A97C50",
+                            tension: 0.3,
+                            borderWidth: 2
+                        }
+                    ]
+                },
+                options: {
+                    plugins: {
+                        legend: { position: "top", align: "end", labels: { boxWidth: 12, padding: 20 } }
+                    },
+                    scales: {
+                        y: { grid: { color: "#f1e7ff" } }
+                    }
+                }
+            });
+        }
+
+        function initExperimentCharts() {
+            // Experiment 1
+            new Chart(document.getElementById("exp1-chart"), {
+                type: "line",
+                data: {
+                    labels: ["W1","W2","W3","W4","W5","W6","W7","W8"],
+                    datasets: [
+                        { label: "Treatment", data: [100,108,118,124,129,132,135,128], borderColor: "#0F172A", tension: 0.3 },
+                        { label: "Control", data: [100,101,102,103,103,104,105,105], borderColor: "#94a3b8", tension: 0.3, borderDash: [3,2] }
+                    ]
+                },
+                options: { plugins: { legend: { display: true } } }
+            });
+
+            // Experiment 2
+            new Chart(document.getElementById("exp2-chart"), {
+                type: "line",
+                data: {
+                    labels: ["W1","W2","W3","W4","W5","W6","W7","W8"],
+                    datasets: [
+                        { label: "Treatment", data: [100,106,114,121,126,129,131,133], borderColor: "#0F172A", tension: 0.3 },
+                        { label: "Control", data: [100,100,101,101,102,102,103,103], borderColor: "#94a3b8", tension: 0.3, borderDash: [3,2] }
+                    ]
+                },
+                options: { plugins: { legend: { display: true } } }
+            });
+        }
+
+        // ==================== DATA INTAKE ====================
+        function loadSampleReport(index) {
+            const samples = [
+                "Hi team — confirming Kraken's Q3 liquidity program spend: $180,000 USD for the period July 1 - Sep 30, 2026, US region.",
+                "re: Q3 grant disbursement, approx 65k spent so far this qtr, corridor campaign w/ Mastercard, US mkt...",
+                "protocol=Kamino chain=Solana tvl_added=8400000 incentive_spend=920 period=2026-Q3 region=SG"
+            ];
+            document.getElementById("raw-text").value = samples[index];
+        }
+
+        function extractData() {
+            const rawText = document.getElementById("raw-text").value.trim();
+            const resultDiv = document.getElementById("extraction-result");
+            resultDiv.classList.remove("hidden");
+
+            let partner = "Kraken", category = "Liquidity", amount = "$180,000 USD", period = "Jul 1 – Sep 30, 2026", country = "US";
+
+            if (rawText.toLowerCase().includes("mastercard")) {
+                partner = "Mastercard"; category = "Marketing"; amount = "$65,000 USD";
+            } else if (rawText.toLowerCase().includes("kamino")) {
+                partner = "Kamino"; category = "DeFi"; amount = "$920";
+            }
+
+            resultDiv.innerHTML = `
+                <div class="font-semibold mb-4">Extracted Fields</div>
+                <div class="grid grid-cols-2 gap-x-8 gap-y-4 text-sm">
+                    <div><span class="text-slate-500">Partner:</span> <span class="font-semibold">${partner}</span> <span class="text-emerald-600 text-xs">(92%)</span></div>
+                    <div><span class="text-slate-500">Category:</span> <span class="font-semibold">${category}</span> <span class="text-emerald-600 text-xs">(88%)</span></div>
+                    <div><span class="text-slate-500">Amount:</span> <span class="font-semibold">${amount}</span> <span class="text-emerald-600 text-xs">(95%)</span></div>
+                    <div><span class="text-slate-500">Period:</span> <span class="font-semibold">${period}</span></div>
+                    <div><span class="text-slate-500">Country:</span> <span class="font-semibold">${country}</span> <span class="text-emerald-600 text-xs">(90%)</span></div>
+                </div>
+                <div class="mt-6 flex gap-3">
+                    <button onclick="alert('Approved & added to tracking sheet!')" class="px-5 py-2 text-sm bg-emerald-600 text-white rounded-2xl font-medium">Approve & Add to Sheet</button>
+                    <button class="px-5 py-2 text-sm border rounded-2xl">Edit fields</button>
+                </div>
+            `;
+        }
+
+        // ==================== SELF SERVE QUERY ====================
+        function initQueryTab() {
+            const container = document.getElementById("suggested-queries");
+            const suggestions = [
+                "What DeFi budget is left for Q3?",
+                "What's our Liquidity burn rate?",
+                "How many active partners does GDN have?",
+                "Which DeFi protocol has the worst mercenary ratio?"
+            ];
+            
+            container.innerHTML = suggestions.map(q => 
+                `<div onclick="runSuggestedQuery('${q}')" class="px-4 py-1.5 text-xs bg-white border rounded-2xl cursor-pointer hover:bg-slate-50">${q}</div>`
+            ).join("");
+
+            // Allow enter key
+            const input = document.getElementById("query-input");
+            input.addEventListener("keypress", function(e) {
+                if (e.key === "Enter") {
+                    runQuery(this.value);
+                }
+            });
+        }
+
+        function runSuggestedQuery(question) {
+            document.getElementById("query-input").value = question;
+            runQuery(question);
+        }
+
+        function runQuery(question) {
+            const resultDiv = document.getElementById("query-result");
+            resultDiv.classList.remove("hidden");
+
+            let answer = "I couldn't find a confident answer for that question with current data.";
+            let source = "live Sheet";
+
+            if (question.toLowerCase().includes("defi") && question.toLowerCase().includes("left")) {
+                answer = "$230,000 remaining in DeFi incentives for Q3 (of $950K).";
+                source = "budget_ledger.defi WHERE quarter='Q3-26'";
+            } else if (question.toLowerCase().includes("liquidity") && question.toLowerCase().includes("burn")) {
+                answer = "Liquidity is burning ~$336,000/week, tracking to fully utilize the $1.8M Q3 budget.";
+                source = "budget_ledger.liquidity";
+            } else if (question.toLowerCase().includes("partner") && question.toLowerCase().includes("count")) {
+                answer = "34 active partners, up 5 net new this quarter across exchanges, DeFi, payments, and treasury.";
+                source = "partner_registry";
+            } else if (question.toLowerCase().includes("mercenary")) {
+                answer = "Protocol Z has the worst mercenary ratio at 47% — flagged for tapering.";
+                source = "defi_metrics";
+            }
+
+            resultDiv.innerHTML = `
+                <div class="font-medium mb-1">Answer</div>
+                <div class="text-base">${answer}</div>
+                <div class="mt-4 text-[10px] text-slate-400">Source: ${source} → refreshed 4 min ago</div>
+            `;
+        }
+
+        // ==================== INITIALIZATION ====================
+        function initializeDashboard() {
+            // Set default tab
+            document.getElementById("tab-overview").classList.remove("hidden");
+            document.getElementById("nav-overview").classList.add("tab-active", "bg-slate-900", "text-white");
+
+            // Render tables
+            renderLiquidityTable();
+            renderDefiTable();
+            renderMarketingTable();
+
+            // Initialize Overview donut
+            setTimeout(() => {
+                initOverviewDonut();
+            }, 300);
+
+            // Initialize query suggestions
+            initQueryTab();
+
+            // Keyboard shortcut hint
+            console.log("%c[GDN v4] Dashboard initialized. Press ? for help.", "color:#64748b");
+        }
+
+        // Boot
+        window.onload = function() {
+            initializeDashboard();
+        }
+
+        // Expose some functions for debugging
+        window.GDN = { switchTab, applyFilters, showMetricTooltip };
+
+        // Mobile Sidebar Toggle
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('hidden');
+            sidebar.classList.toggle('md:block');
+        }
+
+        // Close sidebar when clicking a nav item on mobile
+        document.addEventListener('click', function(e) {
+            const sidebar = document.getElementById('sidebar');
+            if (window.innerWidth < 768 && sidebar && !sidebar.classList.contains('hidden')) {
+                if (e.target.closest('.nav-item')) {
+                    sidebar.classList.add('hidden');
+                    sidebar.classList.remove('md:block');
+                }
+            }
+        });
+
+        // Budget Request Form Handler
+        function submitBudgetRequest(e) {
+            e.preventDefault();
+            
+            const form = document.getElementById('budget-request-form');
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            
+            // Simulate submission
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-2"></i> Submitting...`;
+            
+            setTimeout(() => {
+                form.innerHTML = `
+                    <div class="text-center py-8">
+                        <div class="mx-auto w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mb-4">
+                            <i class="fa-solid fa-check-circle text-emerald-600 text-3xl"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold text-slate-800">Request Submitted Successfully</h3>
+                        <p class="text-slate-600 mt-2">Your budget request has been logged.</p>
+                        <div class="mt-4 inline-block bg-slate-100 px-4 py-1.5 rounded-full text-sm font-mono">
+                            Reference: REQ-${Math.floor(100000 + Math.random() * 900000)}
+                        </div>
+                        <p class="text-xs text-slate-500 mt-6">Network S&O will review and respond within 3 business days.</p>
+                        
+                        <button onclick="location.reload()" 
+                                class="mt-8 px-6 py-2.5 border border-slate-300 hover:bg-slate-50 text-sm rounded-2xl font-medium">
+                            Submit Another Request
+                        </button>
+                    </div>
+                `;
+            }, 1200);
+        }
+
+        function updateFileName(input) {
+            const fileNameDiv = document.getElementById('file-name');
+            if (input.files.length > 0) {
+                fileNameDiv.textContent = input.files[0].name;
+                fileNameDiv.classList.remove('hidden');
+            }
+        }
+    </script>
+
+    <!-- Professional Footer for Sharing -->
+    <div class="bg-white border-t border-slate-200 px-6 py-3 text-xs text-slate-500 flex items-center justify-between flex-shrink-0">
+        <div>
+            Internal prototype built for Paxos Global Dollar Network (GDN) case study interview.
+        </div>
+        <div class="font-medium text-slate-400">
+            July 2026 • All data is mock
+        </div>
+    </div>
+</body>
+</html>
